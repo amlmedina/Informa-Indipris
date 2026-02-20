@@ -1,22 +1,26 @@
 import React, { useState } from 'react';
-import { collection, addDoc } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../../config/firebase'; 
-import { X, Building2, Loader2 } from 'lucide-react';
+import { X, Save, Loader2, MapPin, Hash, Star } from 'lucide-react';
 
-const AddHotelModal = ({ onClose }) => {
+const EditHotelModal = ({ hotel, onClose }) => {
   const [loading, setLoading] = useState(false);
   
-  // Mapeamos exactamente los campos de tu diseño original
   const [formData, setFormData] = useState({
-    nombre: '',
-    precioBase: '',
-    estrellas: '5 Estrellas',
-    ubicacion: '',
-    imagen: ''
+    nombre: hotel?.nombre || '',
+    precioSencilla: hotel?.precioSencilla || 0,
+    precioDoble: hotel?.precioDoble || 0,
+    estrellas: hotel?.estrellas || '5 Estrellas', // 🚀 Aseguramos que cargue el valor actual
+    direccion: hotel?.direccion || '',
+    imagen: hotel?.imagen || '',
+    lat: hotel?.lat || '', 
+    lng: hotel?.lng || '', 
+    orden: hotel?.orden || 99
   });
 
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const value = e.target.type === 'number' ? Number(e.target.value) : e.target.value;
+    setFormData({ ...formData, [e.target.name]: value });
   };
 
   const handleSubmit = async (e) => {
@@ -24,164 +28,103 @@ const AddHotelModal = ({ onClose }) => {
     setLoading(true);
     
     try {
-      const hotelsRef = collection(db, "artifacts/indipris-eventos-v1/public/data/hoteles");
+      const hotelRef = doc(db, "artifacts/indipris-eventos-v1/public/data/hoteles", hotel.id);
       
-      // Inyectamos los datos a Firebase estructurados para que no salgan en $0
-      await addDoc(hotelsRef, {
+      // 🚀 Enviamos TODOS los campos incluyendo estrellas
+      await updateDoc(hotelRef, {
         nombre: formData.nombre,
-        precioSencilla: Number(formData.precioBase) || 0,
-        precioDoble: Number(formData.precioBase) || 0, // Usamos el base para ambos temporalmente
-        estrellas: formData.estrellas,
-        ubicacion: formData.ubicacion,
+        precioSencilla: Number(formData.precioSencilla),
+        precioDoble: Number(formData.precioDoble),
+        estrellas: formData.estrellas, // <-- AQUÍ SE CORRIGE EL ERROR
+        direccion: formData.direccion,
         imagen: formData.imagen,
-        disponible: 0, // Nace con 0 stock para que lo configures después
-        ventasPausadas: false,
-        stock_por_dia: {},
-        orden: 99 // Por defecto se va al final de la lista
+        lat: Number(formData.lat),
+        lng: Number(formData.lng),
+        orden: Number(formData.orden)
       });
 
       setLoading(false);
-      onClose(); // Cierra el modal mágicamente
+      onClose();
     } catch (error) {
-      console.error("Error al crear propiedad:", error);
-      alert("Hubo un error al guardar. Revisa tu conexión.");
+      console.error("Error al actualizar:", error);
+      alert("Error al guardar cambios");
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-      
-      <div className="bg-white w-full max-w-xl rounded-[2.5rem] shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-white w-full max-w-2xl rounded-[3rem] shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
         
-        {/* HEADER DEL MODAL (Idéntico a tu captura) */}
-        <div className="bg-white px-8 py-6 flex justify-between items-center border-b border-gray-100">
+        <div className="bg-[#111] p-8 flex justify-between items-center text-white">
           <div className="flex items-center gap-3">
-            <div className="bg-[#E91E63] p-2.5 rounded-2xl text-white">
-              <Building2 size={20} />
-            </div>
-            <h3 className="text-2xl font-black italic tracking-tighter">
-              <span className="text-[#111]">NUEVA</span> <span className="text-[#E91E63]">PROPIEDAD</span>
-            </h3>
+            <Star className="text-[#E91E63]" size={24} />
+            <h3 className="text-2xl font-black italic uppercase tracking-tighter">Editar Perfil</h3>
           </div>
-          <button 
-            onClick={onClose}
-            className="text-gray-400 hover:text-[#111] transition-colors p-2"
-          >
-            <X size={24} />
-          </button>
+          <button onClick={onClose} className="hover:bg-white/10 p-2 rounded-full transition-colors"><X size={24} /></button>
         </div>
 
-        {/* FORMULARIO */}
-        <form onSubmit={handleSubmit} className="p-8">
-          
-          <div className="space-y-6 mb-10">
-            {/* NOMBRE */}
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                Nombre del Hotel
-              </label>
-              <input 
-                type="text" 
-                name="nombre"
-                required
-                placeholder="Ej. Hilton Santa Fe"
-                value={formData.nombre}
-                onChange={handleChange}
-                className="w-full bg-gray-50/50 border-none rounded-2xl py-4 px-5 font-bold text-[#111] focus:bg-gray-100 transition-colors outline-none"
-              />
+        <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="md:col-span-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block">Nombre del Hotel</label>
+              <input type="text" name="nombre" value={formData.nombre} onChange={handleChange} className="w-full bg-gray-50 rounded-2xl py-4 px-5 font-bold outline-none" />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* PRECIO BASE */}
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                  Precio Base ($)
-                </label>
-                <input 
-                  type="number" 
-                  name="precioBase"
-                  required
-                  placeholder="Ej. 1900"
-                  value={formData.precioBase}
-                  onChange={handleChange}
-                  className="w-full bg-gray-50/50 border-none rounded-2xl py-4 px-5 font-bold text-[#111] focus:bg-gray-100 transition-colors outline-none"
-                />
-              </div>
+            {/* PRECIOS */}
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block">Precio Sencilla ($)</label>
+              <input type="number" name="precioSencilla" value={formData.precioSencilla} onChange={handleChange} className="w-full bg-gray-50 rounded-2xl py-4 px-5 font-bold outline-none" />
+            </div>
+            <div>
+              <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block">Precio Doble ($)</label>
+              <input type="number" name="precioDoble" value={formData.precioDoble} onChange={handleChange} className="w-full bg-gray-50 rounded-2xl py-4 px-5 font-bold outline-none" />
+            </div>
 
-              {/* ESTRELLAS */}
-              <div>
-                <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                  Estrellas
-                </label>
-                <select 
-                  name="estrellas"
-                  value={formData.estrellas}
-                  onChange={handleChange}
-                  className="w-full bg-gray-50/50 border-none rounded-2xl py-4 px-5 font-bold text-[#111] focus:bg-gray-100 transition-colors outline-none appearance-none cursor-pointer"
-                >
-                  <option value="5 Estrellas">5 Estrellas</option>
-                  <option value="4 Estrellas">4 Estrellas</option>
-                  <option value="3 Estrellas">3 Estrellas</option>
-                  <option value="Boutique">Boutique</option>
-                </select>
+            {/* 🚀 SELECTOR DE ESTRELLAS (Agregado a edición) */}
+            <div className="md:col-span-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block">Categoría de Estrellas</label>
+              <select name="estrellas" value={formData.estrellas} onChange={handleChange} className="w-full bg-gray-50 rounded-2xl py-4 px-5 font-bold outline-none">
+                <option value="5 Estrellas">5 Estrellas</option>
+                <option value="4 Estrellas">4 Estrellas</option>
+                <option value="3 Estrellas">3 Estrellas</option>
+                <option value="Boutique">Boutique</option>
+              </select>
+            </div>
+
+            <div className="md:col-span-2">
+              <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block">URL Imagen</label>
+              <input type="url" name="imagen" value={formData.imagen} onChange={handleChange} className="w-full bg-gray-50 rounded-2xl py-4 px-5 font-bold outline-none" />
+            </div>
+
+            {/* UBICACIÓN Y COORDENADAS */}
+            <div className="md:col-span-2 bg-gray-50 p-6 rounded-[2rem] space-y-4">
+              <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block flex items-center gap-1"><MapPin size={12}/> Ubicación y Mapa</label>
+              <input type="text" name="direccion" value={formData.direccion} onChange={handleChange} placeholder="Dirección completa" className="w-full bg-white rounded-xl py-3 px-4 font-bold outline-none shadow-sm" />
+              <div className="grid grid-cols-2 gap-4">
+                <input type="text" name="lat" value={formData.lat} onChange={handleChange} placeholder="Latitud" className="w-full bg-white rounded-xl py-3 px-4 font-bold outline-none shadow-sm" />
+                <input type="text" name="lng" value={formData.lng} onChange={handleChange} placeholder="Longitud" className="w-full bg-white rounded-xl py-3 px-4 font-bold outline-none shadow-sm" />
               </div>
             </div>
 
-            {/* UBICACIÓN */}
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                Referencia de Ubicación
-              </label>
-              <input 
-                type="text" 
-                name="ubicacion"
-                placeholder="Ej. A 15 min de la sede"
-                value={formData.ubicacion}
-                onChange={handleChange}
-                className="w-full bg-gray-50/50 border-none rounded-2xl py-4 px-5 font-bold text-[#111] focus:bg-gray-100 transition-colors outline-none"
-              />
-            </div>
-
-            {/* IMAGEN */}
-            <div>
-              <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                URL de la Imagen
-              </label>
-              <input 
-                type="url" 
-                name="imagen"
-                placeholder="https://..."
-                value={formData.imagen}
-                onChange={handleChange}
-                className="w-full bg-gray-50/50 border-none rounded-2xl py-4 px-5 font-bold text-sm text-[#111] focus:bg-gray-100 transition-colors outline-none"
-              />
+            {/* PRIORIDAD */}
+            <div className="md:col-span-2 bg-pink-50/50 p-6 rounded-[2rem] border border-pink-100">
+              <label className="text-[10px] font-black text-[#E91E63] uppercase mb-2 block flex items-center gap-1"><Hash size={12}/> Orden de Prioridad</label>
+              <input type="number" name="orden" value={formData.orden} onChange={handleChange} className="w-full bg-white rounded-xl py-3 px-4 font-bold outline-none shadow-sm" />
             </div>
           </div>
 
-          {/* BOTONES (Idénticos a tu captura) */}
-          <div className="flex items-center justify-between gap-4 pt-4 border-t border-gray-50">
-            <button 
-              type="button" 
-              onClick={onClose}
-              className="flex-1 py-4 font-black text-[11px] uppercase tracking-widest text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              Cancelar
-            </button>
-            <button 
-              type="submit" 
-              disabled={loading}
-              className="flex-1 py-4 rounded-2xl font-black text-[11px] uppercase tracking-[0.1em] text-white bg-[#E91E63] hover:bg-[#D81B60] transition-colors flex items-center justify-center gap-2"
-            >
-              {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-              {loading ? 'Creando...' : 'Crear Propiedad'}
+          <div className="flex gap-4 pt-6">
+            <button type="button" onClick={onClose} className="flex-1 py-4 font-black text-[10px] uppercase text-gray-400">Cancelar</button>
+            <button type="submit" disabled={loading} className="flex-[2] py-4 rounded-2xl font-black text-[10px] uppercase text-white bg-[#E91E63] flex items-center justify-center gap-2 shadow-lg">
+              {loading ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />} 
+              Guardar Cambios
             </button>
           </div>
-
         </form>
       </div>
     </div>
   );
 };
 
-export default AddHotelModal;
+export default EditHotelModal;

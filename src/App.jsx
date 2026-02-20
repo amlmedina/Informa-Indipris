@@ -104,7 +104,7 @@ const App = () => {
       {view === 'client' && !selectedHotel && (
         <footer className="bg-white border-t border-gray-100 py-6 text-center">
           <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">
-            © 2026 Indipris Travel - Todos los derechos reservados
+            powered by orbix
           </p>
         </footer>
       )}
