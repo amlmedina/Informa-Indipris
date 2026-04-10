@@ -9,11 +9,16 @@ export const useAdminAuth = () => {
   }, []);
 
   const login = (pin) => {
-    if (pin === '1234') {
+    // Saneamiento de datos: Forzamos que sea texto y limpiamos espacios fantasma
+    const pinSeguro = String(pin).trim();
+
+    if (pinSeguro === '1234') {
       sessionStorage.setItem('admin_access', 'true');
       setIsAdmin(true);
       return true;
     }
+    
+    console.warn("Intento fallido de Admin con el PIN:", pinSeguro);
     return false;
   };
 
