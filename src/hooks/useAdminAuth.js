@@ -1,31 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export const useAdminAuth = () => {
-  const [isAdmin, setIsAdmin] = useState(false);
+  // MODO DESARROLLO: Inicializamos como TRUE para saltar cualquier restricción.
+  const [isAdmin, setIsAdmin] = useState(true);
 
-  useEffect(() => {
-    const session = sessionStorage.getItem('admin_access');
-    if (session === 'true') setIsAdmin(true);
-  }, []);
-
-  const login = (password) => {
-    // Saneamiento: forzamos a texto y quitamos espacios accidentales
-    const passSegura = String(password).trim();
-
-    // Nueva validación con la contraseña solicitada
-    if (passSegura === 'admin123') {
-      sessionStorage.setItem('admin_access', 'true');
-      setIsAdmin(true);
-      return true;
-    }
-    
-    console.warn("Intento fallido de Admin con:", passSegura);
-    return false;
+  // Mantenemos la estructura de la función por si algún botón de "Entrar" 
+  // todavía está programado para llamarla, así no provocará un error de React.
+  const login = () => {
+    setIsAdmin(true);
+    return true;
   };
 
+  // Mantenemos el logout de forma cosmética
   const logout = () => {
-    sessionStorage.removeItem('admin_access');
-    setIsAdmin(false);
+    console.warn("Logout deshabilitado temporalmente en Modo Desarrollo");
   };
 
   return { isAdmin, login, logout };
