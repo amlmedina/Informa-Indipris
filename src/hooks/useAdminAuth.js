@@ -8,17 +8,18 @@ export const useAdminAuth = () => {
     if (session === 'true') setIsAdmin(true);
   }, []);
 
-  const login = (pin) => {
-    // Saneamiento de datos: Forzamos que sea texto y limpiamos espacios fantasma
-    const pinSeguro = String(pin).trim();
+  const login = (password) => {
+    // Saneamiento: forzamos a texto y quitamos espacios accidentales
+    const passSegura = String(password).trim();
 
-    if (pinSeguro === '1234') {
+    // Nueva validación con la contraseña solicitada
+    if (passSegura === 'admin123') {
       sessionStorage.setItem('admin_access', 'true');
       setIsAdmin(true);
       return true;
     }
     
-    console.warn("Intento fallido de Admin con el PIN:", pinSeguro);
+    console.warn("Intento fallido de Admin con:", passSegura);
     return false;
   };
 
